@@ -1,11 +1,32 @@
 import React, { useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { Formik } from 'formik';
-import { Octicons, Ionicons } from '@expo/vector-icons';
+import { Octicons } from '@expo/vector-icons';
 import { View, Text, TouchableOpacity } from 'react-native';
 import Constants from 'expo-constants';
 import styled from 'styled-components/native';
 import { useNavigation } from '@react-navigation/native';
+import DateTimePickerModal from "react-native-modal-datetime-picker";
+import { initializeApp } from "firebase/app";
+import { createUserWithEmailAndPassword, getAuth, getReactNativePersistence } from "firebase/auth";
+import { getFirestore, collection, addDoc } from "firebase/firestore";
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCA7wBoQgyALz623_kZIPjaExG3ojba86U",
+  authDomain: "cityride2-c66ec.firebaseapp.com",
+  projectId: "cityride2-c66ec",
+  storageBucket: "cityride2-c66ec.appspot.com",
+  messagingSenderId: "692339334559",
+  appId: "1:692339334559:web:9de6f6a4df5936bb2271aa"
+  };
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+  const auth = getAuth(app, {
+    persistence: getReactNativePersistence(AsyncStorage)
+  });
+  const firestore = getFirestore(app);
+ // const Stack = createStackNavigator();
 
 const Colors = {
   primary: "#ffffff",
@@ -13,20 +34,15 @@ const Colors = {
   darkLight: "#9CA3AF",
   brand: "#6D28D9",
   green: "#10B981",
-  red: "#EF4444",
-  black: "#000000",
-  brown: "#b33c00",
-  purple: "#9900cc",
-  yellow: "#ffff1a"
 };
-const { primary, tertiary, darkLight, brand, green, red, purple, yellow, brown } = Colors;
+const { primary, tertiary, darkLight, brand, green } = Colors;
 
 const StatusBarHeight = Constants.statusBarHeight;
 
 const StyledContainer = styled.View`
-flex: 1;
-  padding: 100px;
-  padding-horizontal: ${StatusBarHeight + 10}px; 
+  flex: 1;
+  padding-top: ${StatusBarHeight + 20}px;
+  padding-horizontal: 20px;
   background-color: ${primary};
 `;
 const InnerContainer = styled.View`
@@ -39,49 +55,44 @@ const PageTitle = styled.Text`
   font-size: 30px;
   text-align:center;
   font-weight: bold;
-  color: ${"#000000"};
+  color: ${tertiary};
   padding: 10px;
-  
-  margin-bottom: 10px;
+  margin-bottom: 20px;
+  margin-top: 20px;
 `;
 const SubTitle = styled.Text`
   font-size: 18px;
-  margin-bottom: 10px;
+  margin-bottom: 25px;
   letter-spacing: 1px;
   font-weight: bold;
-  color: ${"#000000"};
+  color: ${tertiary};
 `;
 const StyledFormAreas = styled.View`
-  width: 150%;
+  width: 90%;
 `;
-const StyledTextInput = styled.TextInput`
+const StyledTextInput = styled.View`
   background-color: ${primary};
-  padding: 15px;
-  padding-left: 55px;
+  padding: 11px;
   border-radius: 5px;
   font-size: 15px;
   height: 45px;
-  margin-vertical:  3px;
-  margin-bottom: 10px;
-  color: ${tertiary}; 
-  border: 1px green;
+  margin-bottom: 30px;
+  color: ${tertiary};
+  border: 1px solid ${darkLight};
+  flex-direction: row;
+  align-items: center;
+`;
+const TextInputField = styled.TextInput`
+  flex: 1;
+  padding-left: 18px;
 `;
 const StyledInputLabel = styled.Text`
-  color: ${"#000000"};
+  color: ${tertiary};
   font-size: 13px;
   text-align: left;
-`;
-const LeftIcon = styled.View`
-  left: 10px;
-  top: 30px;
   position: absolute;
-  z-index:1;
-`;
-const RightIcon = styled.TouchableOpacity`
-  right: 30px;
-  top: 30px;
-  position: absolute;
-  z-index:1;
+  padding-bottom: 70px;
+  left: 7px;
 `;
 const StyledButton = styled.TouchableOpacity`
   padding: 15px;
@@ -95,10 +106,6 @@ const StyledButton = styled.TouchableOpacity`
 const ButtonText = styled.Text`
   color: ${primary};
   font-size: 20px;
-`;
-const MsgBox = styled.Text`
-  text-align: center;
-  font-size: 13px;
 `;
 const Line = styled.View`
   height: 1px;
@@ -115,7 +122,7 @@ const ExtraView = styled.View`
 const ExtraText = styled.Text`
   justify-content: center;
   align-content: center;
-  color: ${"#000000"};
+  color: ${tertiary};
   font-size: 15px;
 `;
 const TextLink = styled.TouchableOpacity`
@@ -129,80 +136,140 @@ const TextLinkContent = styled.Text`
 
 const Signup = () => {
   const [hidePassword, setHidePassword] = useState(true);
+  const [hideConfirmPassword, setHideConfirmPassword] = useState(true);
+  const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
+  const [dateOfBirth, setDateOfBirth] = useState('');
   const navigation = useNavigation();
+
+  const handleConfirm = (date) => {
+    setDateOfBirth(date.toDateString());
+    setDatePickerVisibility(false);
+  };
+
+  const togglePasswordVisibility = (field) => {
+    if (field === 'password') {
+      setHidePassword(!hidePassword);
+    } else if (field === 'confirmPassword') {
+      setHideConfirmPassword(!hideConfirmPassword);
+    }
+  };
+
+  const handleSignup = async (values) => {
+    try {
+      // Step 1: Create user authentication
+      const authCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
+  
+      // Step 2: Add user data to Firestore
+      await addDoc(collection(db, 'users'), {
+        Name: values.fullName,
+        Email: values.email,
+        DOB: dateOfBirth, // Use the state variable directly
+        // Make sure to use the correct field name ('DOB' instead of 'D.O.B')
+        Password: values.password, // This should be securely hashed and not stored directly
+      });
+      
+      console.log('User added and authenticated successfully!');
+      
+      // Navigate to the login screen
+      navigation.navigate('Intro');
+    } catch (error) {
+      console.error("Error during signup and data storing:", error);
+    }
+  };
 
   return (
     <StyledContainer>
-      <StatusBar style="light" />
+      <StatusBar style="dark" />
       <InnerContainer>
         <PageTitle>CityRide</PageTitle>
         <SubTitle>Account Signup</SubTitle>
         <Formik
-          initialValues={{ fullName: '', email: '', dateOfBirth: '', password: '', confirmPassword: ''}}
-          onSubmit={(values)=> {
-            console.log(values);
-          }}
+          initialValues={{ fullName: '', email: '', password: '', confirmPassword: '' }}
+          onSubmit={handleSignup}
         >
           {({ handleChange, handleBlur, handleSubmit, values }) => (
             <StyledFormAreas>
-              <MyTextInput 
-                label="Full Name"
-                icon="person"
-                placeholder="Bruno Jo"
-                placeholderTextColor={darkLight}
-                onChangeText={handleChange('fullName')}
-                onBlur={handleBlur('fullName')}
-                value={values.fullName}
-              />
-              <MyTextInput 
-                  label="Phone Number"
-                  icon={<Octicons name="device-mobile" size={20} color={"#000000"} />} // Wrap icon in JSX
-                  placeholder="8756349712"
+              <StyledTextInput>
+                <StyledInputLabel>Full Name</StyledInputLabel>
+                <Octicons name="person" size={20} color={tertiary} />
+                <TextInputField
+                  placeholder="Enter your full name"
                   placeholderTextColor={darkLight}
-                  onChangeText={handleChange('phoneNumber')} 
-                  onBlur={handleBlur('phoneNumber')}
-                  value={values.phoneNumber} 
-                  keyboardType="phone-pad" 
+                  onChangeText={handleChange('fullName')}
+                  onBlur={handleBlur('fullName')}
+                  value={values.fullName}
+                />
+              </StyledTextInput>
+              <StyledTextInput>
+                <StyledInputLabel>Email</StyledInputLabel>
+                <Octicons name="mail" size={20} color={tertiary} />
+                <TextInputField
+                  placeholder="Enter your e-mail address"
+                  placeholderTextColor={darkLight}
+                  onChangeText={handleChange('email')}
+                  onBlur={handleBlur('email')}
+                  value={values.email}
+                  keyboardType="email-address"
+                />
+              </StyledTextInput>
+              <TouchableOpacity onPress={() => setDatePickerVisibility(true)}>
+                <StyledTextInput>
+                  <StyledInputLabel>Date of Birth</StyledInputLabel>
+                  <Octicons name="calendar" size={20} color={tertiary} />
+                  <TextInputField
+                    placeholder="Select your date of birth"
+                    placeholderTextColor={darkLight}
+                    value={dateOfBirth}
+                    editable={false}
                   />
-
-              <MyTextInput 
-                label="Date of Birth"
-                icon="calendar"
-                placeholder="YYYY-MM-DD"
-                placeholderTextColor={darkLight}
-                onChangeText={handleChange('dateOfBirth')}
-                onBlur={handleBlur('dateOfBirth')}
-                value={values.dateOfBirth}
+                </StyledTextInput>
+              </TouchableOpacity>
+              <DateTimePickerModal
+                isVisible={isDatePickerVisible}
+                mode="date"
+                onConfirm={handleConfirm}
+                onCancel={() => setDatePickerVisibility(false)}
               />
-              <MyTextInput 
-                label="Password"
-                icon="lock"
-                placeholder="* * * * * * * *"
-                placeholderTextColor={darkLight}
-                onChangeText={handleChange('password')}
-                onBlur={handleBlur('password')}
-                value={values.password}
-                secureTextEntry={hidePassword}
-                isPassword={true}
-                hidePassword={hidePassword}
-                setHidePassword={setHidePassword}
-              />
-              <MyTextInput 
-                label="Confirm Password"
-                icon="lock"
-                placeholder="* * * * * * * *"
-                placeholderTextColor={darkLight}
-                onChangeText={handleChange('confirmPassword')}
-                onBlur={handleBlur('confirmPassword')}
-                value={values.confirmPassword}
-                secureTextEntry={hidePassword}
-                isPassword={true}
-                hidePassword={hidePassword}
-                setHidePassword={setHidePassword}
-              />
-              <MsgBox>...</MsgBox>
+              <StyledTextInput>
+                <StyledInputLabel>Password</StyledInputLabel>
+                <Octicons name="lock" size={20} color={tertiary} />
+                <TextInputField
+                  placeholder="Enter your password"
+                  placeholderTextColor={darkLight}
+                  onChangeText={handleChange('password')}
+                  onBlur={handleBlur('password')}
+                  value={values.password}
+                  secureTextEntry={hidePassword}
+                />
+                <TouchableOpacity onPress={() => togglePasswordVisibility('password')}>
+                  <Octicons
+                    name={hidePassword ? 'eye-closed' : 'eye'}
+                    size={20}
+                    color={tertiary}
+                  />
+                </TouchableOpacity>
+              </StyledTextInput>
+              <StyledTextInput>
+                <StyledInputLabel>Confirm Password</StyledInputLabel>
+                <Octicons name="lock" size={20} color={tertiary} />
+                <TextInputField
+                  placeholder="Confirm your password"
+                  placeholderTextColor={darkLight}
+                  onChangeText={handleChange('confirmPassword')}
+                  onBlur={handleBlur('confirmPassword')}
+                  value={values.confirmPassword}
+                  secureTextEntry={hideConfirmPassword}
+                />
+                <TouchableOpacity onPress={() => togglePasswordVisibility('confirmPassword')}>
+                  <Octicons
+                    name={hideConfirmPassword ? 'eye-closed' : 'eye'}
+                    size={20}
+                    color={tertiary}
+                  />
+                </TouchableOpacity>
+              </StyledTextInput>
               <StyledButton onPress={handleSubmit}>
-                <ButtonText>Signup</ButtonText> 
+                <ButtonText>Signup</ButtonText>
               </StyledButton>
               <Line />
               <ExtraView>
@@ -216,18 +283,6 @@ const Signup = () => {
         </Formik>
       </InnerContainer>
     </StyledContainer>
-  );
-};
-
-const MyTextInput = ({ label, icon, ...props }) => {
-  return (
-    <View>
-      <LeftIcon>
-        <Octicons name={icon} size={20} color={"#000000"} />
-      </LeftIcon>
-      <StyledInputLabel>{label}</StyledInputLabel>
-      <StyledTextInput {...props} />
-    </View>
   );
 };
 

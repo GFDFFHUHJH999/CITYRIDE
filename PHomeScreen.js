@@ -2,20 +2,22 @@ import React, { useRef, useState } from 'react';
 import { View, TouchableOpacity, Text, StyleSheet, Image, Button, Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Carousel, { Pagination } from 'react-native-snap-carousel';
+import { useNavigation } from '@react-navigation/native';
+
 
 const { width: viewportWidth, height: viewportHeight } = Dimensions.get('window');
 
 const images = [
   require('../assets/image1.png'),
-  require('../assets/2wheel.png'),
-  require('../assets/image5.jpg'),
-  require('../assets/CityRide.png'),
+  require('../assets/image2.png'),
+  require('../assets/image3.png'),
   // Add more image paths as needed
 ];
 
 const PassengerHomePage = () => {
   const carouselRef = useRef(null);
   const [activeSlide, setActiveSlide] = useState(0);
+  const navigation = useNavigation();
 
   const renderCarouselItem = ({ item }) => (
     <View style={styles.imageContainer}>
@@ -27,7 +29,14 @@ const PassengerHomePage = () => {
 
   const handleButtonPress = () => {
     // Handle button press action here
-    console.log('Button pressed');
+    navigation.navigate('Pass');
+  };
+
+  const handleAccountPress = () => {
+    navigation.navigate('PassengerMenu');
+  };
+  const handleNavigationPress = () =>{
+    navigation.navigate('Status')
   };
 
   return (
@@ -42,7 +51,7 @@ const PassengerHomePage = () => {
           itemWidth={viewportWidth}
           loop={true}
           autoplay={true} // Enable autoplay
-          autoplayInterval={3000} // Set autoplay interval to 3 seconds
+          autoplayInterval={15000} // Set autoplay interval to 3 seconds
           layout={'default'}
           onSnapToItem={onSnapToItem}
         />
@@ -58,23 +67,23 @@ const PassengerHomePage = () => {
 
       {/* Book Now Button and Label */}
       <View style={styles.buttonContainer}>
-        <Button title="Book Now" onPress={handleButtonPress} color="#000" />
         <Text style={styles.label}>Book your ride now</Text>
+        <Button title="Book Now" onPress={handleButtonPress} color="#000" />
       </View>
 
       {/* Bottom Navigation Bar */}
       <View style={styles.bottomBar}>
         <TouchableOpacity style={styles.iconContainer}>
-          <Ionicons name="home" size={24} color="white" />
-          <Text style={styles.iconText}>Home</Text>
+          <Ionicons name="home" size={24} color="black" />
+          <Text style={[styles.iconText, { color: 'black' }]}>Home</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.iconContainer}>
-          <Ionicons name="notifications" size={24} color="white" />
-          <Text style={styles.iconText}>Notifications</Text>
+        <TouchableOpacity style={styles.iconContainer} onPress={handleNavigationPress}>
+          <Ionicons name="notifications" size={24} color="black" />
+          <Text style={[styles.iconText, { color: 'black' }]}>Notifications</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.iconContainer}>
-          <Ionicons name="person" size={24} color="white" />
-          <Text style={styles.iconText}>Account</Text>
+        <TouchableOpacity style={styles.iconContainer} onPress={handleAccountPress}>
+          <Ionicons name="person" size={24} color="black" />
+          <Text style={[styles.iconText, { color: 'black' }]}>Account</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -84,13 +93,13 @@ const PassengerHomePage = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFDD0', 
+    backgroundColor: '#FFFDD0',
   },
   bottomBar: {
     flexDirection: 'row',
     justifyContent: 'space-around',
     alignItems: 'center',
-    backgroundColor: '#000', // Black background
+    backgroundColor: '#FFF', // Black background
     paddingVertical: 20,
     position: 'absolute',
     bottom: 0,
@@ -99,23 +108,24 @@ const styles = StyleSheet.create({
   iconContainer: {
     alignItems: 'center',
   },
+  
   iconText: {
     fontSize: 12,
     color: '#FFF', // White text color
   },
   carouselContainer: {
     marginTop: 200, // Adjusted to move carousel more down
-    height: viewportHeight / 2, // Half of the screen height
+    height: viewportHeight / 2.7, // Half of the screen height
     width: viewportWidth,
   },
   imageContainer: {
     justifyContent: 'center',
     alignItems: 'center',
-    height: viewportHeight / 2.4, // Half of the screen height
+    height: viewportHeight / 3, // Half of the screen height
     width: viewportWidth,
   },
   image: {
-    width: viewportWidth,
+    width: '100%',
     height: '100%',
     resizeMode: 'cover',
   },
@@ -134,14 +144,16 @@ const styles = StyleSheet.create({
   },
   buttonContainer: {
     position: 'absolute',
-    bottom: 80, // Adjusted to be right above the bottom bar
-    left: 0,
+    bottom: 170, // Adjusted to be right above the bottom bar
     right: 0,
+    left: 0,
     alignItems: 'center',
   },
+  
   label: {
-    fontSize: 16,
-    marginTop: 10,
+    fontSize: 20,
+    marginTop: 30,
+    marginBottom: 20,
     color: '#000', // Black text color
   },
 });
